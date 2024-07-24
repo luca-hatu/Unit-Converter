@@ -1,3 +1,5 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
 import pint
 
 def fetch_units():
@@ -22,38 +24,64 @@ def convert_units(value, from_unit, to_unit):
     to_quantity = from_quantity.to(ureg(to_unit))
     return to_quantity.magnitude
 
-def main():
-    print("Welcome to the Unit Converter")
-    units = fetch_units()
-    if units:
-        print("Available units:", ', '.join(units))
-    else:
-        print("Failed to fetch units.")
-        return
-
-    value = float(input("Enter the value to convert: "))
-    from_unit = input("Enter the unit to convert from: ").strip().lower()
-
+def update_compatible_units(event):
+    from_unit = from_unit_var.get().strip().lower()
     compatible_units = get_compatible_units(from_unit)
-    if compatible_units:
-        print("You can convert to the following units:", ', '.join(compatible_units))
-    else:
-        print("No compatible units found.")
+    to_unit_var.set('')
+    to_unit_combobox['values'] = compatible_units
 
-    to_unit = input("Enter the unit to convert to: ").strip().lower()
-
-    if to_unit not in compatible_units:
-        print("Invalid conversion unit entered.")
-        return
-
+def perform_conversion():
     try:
-        result = convert_units(value, from_unit, to_unit)
-        print(f"{value} {from_unit} is equal to {result} {to_unit}")
+        value = float(value_entry.get())
+        from_unit = from_unit_var.get().strip().lower()
+        to_unit = to_unit_var.get().strip().lower()
+        
+        if from_unit and to_unit:
+            result = convert_units(value, from_unit, to_unit)
+            result_label.config(text=f"{value} {from_unit} = {result} {to_unit}")
+        else:
+            messagebox.showerror("Error", "Please select valid units.")
     except Exception as e:
-        print(f"Failed to perform conversion: {e}")
+        messagebox.showerror("Error", f"Failed to perform conversion: {e}")
 
-if __name__ == "__main__":
-    main()
+
+units = fetch_units()
+
+root = tk.Tk()
+root.title("Unit Converter")
+
+mainframe = ttk.Frame(root, padding="10 10 10 10")
+mainframe.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+root.columnconfigure(0, weight=1)
+root.rowconfigure(0, weight=1)
+
+ttk.Label(mainframe, text="Value:").grid(row=0, column=0, sticky=tk.W)
+value_entry = ttk.Entry(mainframe, width=10)
+value_entry.grid(row=0, column=1, sticky=(tk.W, tk.E))
+
+ttk.Label(mainframe, text="From unit:").grid(row=1, column=0, sticky=tk.W)
+from_unit_var = tk.StringVar()
+from_unit_combobox = ttk.Combobox(mainframe, textvariable=from_unit_var)
+from_unit_combobox['values'] = units
+from_unit_combobox.grid(row=1, column=1, sticky=(tk.W, tk.E))
+from_unit_combobox.bind('<<ComboboxSelected>>', update_compatible_units)
+
+ttk.Label(mainframe, text="To unit:").grid(row=2, column=0, sticky=tk.W)
+to_unit_var = tk.StringVar()
+to_unit_combobox = ttk.Combobox(mainframe, textvariable=to_unit_var)
+to_unit_combobox.grid(row=2, column=1, sticky=(tk.W, tk.E))
+
+convert_button = ttk.Button(mainframe, text="Convert", command=perform_conversion)
+convert_button.grid(row=3, column=0, columnspan=2)
+
+result_label = ttk.Label(mainframe, text="")
+result_label.grid(row=4, column=0, columnspan=2)
+
+for child in mainframe.winfo_children():
+    child.grid_configure(padx=5, pady=5)
+
+root.mainloop()
+
 
 
 
